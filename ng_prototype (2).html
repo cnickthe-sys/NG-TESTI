@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>NG — Protótipo Interativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --charcoal:#2B2E33;
+    --charcoal-2:#3A3E45;
+    --charcoal-3:#1E2024;
+    --kibble:#C98A4B;
+    --kibble-dark:#A8672E;
+    --cream:#F7F3EC;
+    --cream-2:#EFE8DA;
+    --umber:#2A1F18;
+    --umber-soft:#6B5D51;
+    --green:#5B8C5A;
+    --green-soft:#E4EEE0;
+    --line:#DED4C2;
+    --steel:#4A4E56;
+    --steel-dark:#2F323A;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Inter',sans-serif;
+    background:
+      radial-gradient(circle at 20% 10%, #40444c 0%, transparent 45%),
+      linear-gradient(180deg, #23262b 0%, #16181b 100%);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px 16px;
+  }
+
+  .machine{
+    width:400px;
+    background:linear-gradient(180deg, var(--charcoal-2), var(--charcoal-3));
+    border-radius:28px;
+    padding:20px;
+    box-shadow:0 40px 80px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .brand-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:6px 8px 14px;
+  }
+  .brand{
+    font-family:'Baloo 2'; font-weight:800; font-size:21px; letter-spacing:1px;
+    color:var(--kibble); display:flex; align-items:center; gap:8px;
+  }
+  .brand .dot{ width:9px;height:9px;border-radius:50%; background:var(--green);
+    box-shadow:0 0 0 3px rgba(91,140,90,0.25); }
+  .brand-sub{ font-size:10px; color:#9A9FA8; letter-spacing:0.4px; }
+
+  .screen{
+    background:var(--cream);
+    border-radius:18px;
+    padding:16px 15px 17px;
+    box-shadow:inset 0 2px 10px rgba(0,0,0,0.15);
+    min-height:340px;
+    position:relative;
+  }
+
+  /* views */
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  /* search */
+  .search{
+    display:flex; align-items:center; gap:9px;
+    background:#fff; border:1.5px solid var(--line); border-radius:13px;
+    padding:10px 13px; margin-bottom:12px;
+  }
+  .search svg{flex-shrink:0; color:var(--umber-soft);}
+  .search input{
+    border:none; outline:none; background:transparent;
+    font-family:'Inter'; font-size:13px; color:var(--umber); width:100%;
+  }
+  .search input::placeholder{color:#B3A899;}
+
+  .results{ display:flex; flex-direction:column; gap:7px; margin-bottom:6px; }
+  .item{
+    display:flex; align-items:center; justify-content:space-between;
+    background:#fff; border:1.5px solid var(--line); border-radius:12px;
+    padding:9px 12px; cursor:pointer; transition:border-color .15s, transform .1s;
+  }
+  .item:hover{ border-color:var(--kibble); }
+  .item:active{ transform:scale(0.98); }
+  .item-name{ font-size:12.5px; font-weight:600; color:var(--umber); }
+  .item-desc{ font-size:10px; color:var(--umber-soft); margin-top:1px; }
+  .item-arrow{ color:var(--kibble-dark); font-size:14px; }
+
+  .empty-hint{
+    text-align:center; font-size:11px; color:#B3A899; padding:30px 10px;
+  }
+
+  /* reveal / configure view */
+  .back-btn{
+    font-size:11px; font-weight:600; color:var(--umber-soft);
+    display:flex; align-items:center; gap:4px; cursor:pointer; margin-bottom:10px;
+  }
+  .reveal{
+    background:var(--charcoal); border-radius:14px; padding:14px 15px 13px;
+    margin-bottom:12px; position:relative; overflow:hidden;
+  }
+  .reveal::after{ content:""; position:absolute; inset:0;
+    background:radial-gradient(circle at 85% -10%, rgba(201,138,75,0.25), transparent 55%); }
+  .reveal-label{ font-size:9.5px; text-transform:uppercase; letter-spacing:1.1px;
+    color:#9A9FA8; font-weight:600; position:relative; }
+  .reveal-title{ font-family:'Baloo 2'; font-weight:700; font-size:17px; color:#fff;
+    margin-top:3px; position:relative; }
+  .reveal-desc{ font-size:11px; color:#B7BCC4; margin-top:2px; position:relative; }
+
+  .qty-row{
+    display:flex; align-items:center; justify-content:space-between;
+    background:#fff; border:1.5px solid var(--line); border-radius:13px;
+    padding:11px 13px; margin-bottom:12px;
+  }
+  .qty-label{ font-size:12px; color:var(--umber-soft); font-weight:500; }
+  .qty-control{ display:flex; align-items:center; gap:11px; }
+  .qty-btn{
+    width:26px; height:26px; border-radius:8px; border:1.5px solid var(--line);
+    background:var(--cream-2); color:var(--umber); font-size:15px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none;
+  }
+  .qty-btn:active{ transform:scale(0.9); }
+  .qty-val{ font-family:'JetBrains Mono'; font-weight:600; font-size:13.5px; color:var(--umber);
+    min-width:14px; text-align:center; }
+
+  .section-title{ font-size:10px; text-transform:uppercase; letter-spacing:1px;
+    color:var(--umber-soft); font-weight:700; margin-bottom:7px; }
+  .pay-row{ display:flex; gap:9px; margin-bottom:14px; }
+  .pay-opt{
+    flex:1; border-radius:12px; padding:10px 9px; text-align:center; font-size:12px;
+    font-weight:600; color:var(--umber-soft); background:#fff; border:1.5px solid var(--line);
+    display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;
+  }
+  .pay-opt.active{ background:var(--umber); color:#fff; border-color:var(--umber);
+    box-shadow:0 6px 14px -6px rgba(42,31,24,0.5); }
+
+  .cta{
+    width:100%; border:none; border-radius:13px; padding:14px;
+    font-family:'Inter'; font-weight:700; font-size:14px; color:#fff;
+    background:linear-gradient(180deg, var(--kibble), var(--kibble-dark));
+    box-shadow:0 10px 20px -8px rgba(168,103,46,0.55); cursor:pointer; letter-spacing:0.2px;
+  }
+  .cta:disabled{ opacity:0.6; cursor:default; }
+  .cta.ghost{
+    background:#fff; color:var(--umber); box-shadow:none; border:1.5px solid var(--line);
+  }
+
+  /* progress view */
+  .progress-wrap{ text-align:center; padding:20px 8px 6px; }
+  .progress-title{ font-family:'Baloo 2'; font-weight:700; font-size:15px; color:var(--umber); }
+  .progress-sub{ font-size:11px; color:var(--umber-soft); margin-top:3px; margin-bottom:18px; }
+  .bar-track{ height:9px; border-radius:6px; background:var(--cream-2); overflow:hidden; margin-bottom:8px; }
+  .bar-fill{ height:100%; width:0%; border-radius:6px;
+    background:linear-gradient(90deg, var(--green), #7BAE79); transition:width .15s linear; }
+  .progress-pct{ font-family:'JetBrains Mono'; font-size:11px; font-weight:600; color:var(--green); }
+  .kibble-fall{ font-size:22px; margin:14px 0; }
+
+  /* done view */
+  .done-wrap{ text-align:center; padding:22px 8px 4px; }
+  .done-icon{
+    width:52px; height:52px; border-radius:50%; background:var(--green-soft);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 14px;
+    font-size:24px;
+  }
+  .done-title{ font-family:'Baloo 2'; font-weight:700; font-size:16px; color:var(--umber); }
+  .done-sub{ font-size:11.5px; color:var(--umber-soft); margin-top:5px; margin-bottom:18px; line-height:1.5; }
+
+  /* physical panel below screen */
+  .panel{ display:flex; gap:10px; margin-top:14px; align-items:flex-end; }
+  .card-slot{
+    flex:1; background:var(--charcoal-3); border-radius:10px; padding:8px 10px;
+    border:1px solid rgba(255,255,255,0.06);
+  }
+  .card-slot .bar{ height:4px; border-radius:2px; background:#0C0D0F; margin-bottom:6px; }
+  .card-slot span{ font-size:8.5px; color:#9A9FA8; font-weight:500; }
+
+  .water{
+    width:66px; background:linear-gradient(180deg, var(--steel), var(--steel-dark));
+    border-radius:10px; padding:8px; text-align:center;
+  }
+  .water .drop{ font-size:16px; }
+  .water span{ font-size:7.5px; color:#B7BCC4; font-weight:500; display:block; margin-top:2px; }
+
+  .tray{
+    margin-top:10px; background:var(--charcoal-3); border-radius:12px; padding:12px;
+    text-align:center; border:1px solid rgba(255,255,255,0.06); transition:box-shadow .3s, border-color .3s;
+  }
+  .tray.ready{
+    box-shadow:0 0 0 2px var(--kibble), 0 0 22px rgba(201,138,75,0.45);
+    border-color:var(--kibble);
+  }
+  .tray-bowl{ font-size:20px; }
+  .tray span{ font-size:9px; color:#9A9FA8; font-weight:500; display:block; margin-top:4px; }
+  .tray.ready span{ color:var(--kibble); font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="machine">
+  <div class="brand-row">
+    <div class="brand"><span class="dot" id="statusDot"></span>NG</div>
+    <div class="brand-sub">Dispensador&nbsp;de&nbsp;Fast&nbsp;Food</div>
+  </div>
+
+  <div class="screen">
+
+    <!-- VIEW 1: search / list -->
+    <div class="view active" id="view-search">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Buscar lanche ou bebida...">
+      </div>
+      <div class="results" id="results"></div>
+    </div>
+
+    <!-- VIEW 2: configure (qty + pagamento) -->
+    <div class="view" id="view-configure">
+      <div class="back-btn" onclick="goToSearch()">‹ Voltar à busca</div>
+      <div class="reveal">
+        <div class="reveal-label">Você escolheu</div>
+        <div class="reveal-title" id="chosenName">—</div>
+        <div class="reveal-desc" id="chosenDesc">—</div>
+      </div>
+      <div class="qty-row">
+        <span class="qty-label">Quantidade</span>
+        <div class="qty-control">
+          <div class="qty-btn" onclick="changeQty(-1)">−</div>
+          <span class="qty-val" id="qtyVal">1</span>
+          <div class="qty-btn" onclick="changeQty(1)">+</div>
+        </div>
+      </div>
+      <div class="section-title">Forma de pagamento</div>
+      <div class="pay-row">
+        <div class="pay-opt active" id="pay-pix" onclick="selectPay('pix')">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 L2 12 L12 22 L22 12 Z"/></svg>
+          Pix
+        </div>
+        <div class="pay-opt" id="pay-cartao" onclick="selectPay('cartao')">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Cartão
+        </div>
+      </div>
+      <button class="cta" onclick="startGenerating()">Confirmar e liberar</button>
+    </div>
+
+    <!-- VIEW 3: progress -->
+    <div class="view" id="view-progress">
+      <div class="progress-wrap">
+        <div class="kibble-fall">🍔</div>
+        <div class="progress-title">Gerando seu pedido</div>
+        <div class="progress-sub" id="progressSub">Preparando porção...</div>
+        <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+        <div class="progress-pct" id="barPct">0%</div>
+      </div>
+    </div>
+
+    <!-- VIEW 4: done -->
+    <div class="view" id="view-done">
+      <div class="done-wrap">
+        <div class="done-icon">✅</div>
+        <div class="done-title">Pedido pronto!</div>
+        <div class="done-sub">Retire a comida na bandeja abaixo.<br>Pagamento confirmado via <b id="paySummary">Pix</b>.</div>
+        <button class="cta ghost" onclick="resetAll()">Fazer novo pedido</button>
+      </div>
+    </div>
+
+    <!-- physical panel -->
+    <div class="panel">
+      <div class="card-slot">
+        <div class="bar"></div>
+        <span>78% de água</span>
+      </div>
+      <div class="water">
+        <div class="drop">💧</div>
+        <span>Depósito<br>de água</span>
+      </div>
+    </div>
+    <div class="tray" id="tray">
+      <div class="tray-bowl">🍟</div>
+      <span id="traySpan">Aqui retira a comida</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const products = [
+  {name:"Cheeseburger Duplo", desc:"Pão, dois hambúrgueres e queijo"},
+  {name:"X-Bacon", desc:"Hambúrguer, bacon crocante e queijo"},
+  {name:"X-Salada", desc:"Hambúrguer, alface, tomate e maionese"},
+  {name:"X-Tudo", desc:"Hambúrguer, ovo, bacon, presunto e salada"},
+  {name:"Hambúrguer Vegetariano", desc:"Blend de grão-de-bico e legumes"},
+  {name:"Batata Frita Grande", desc:"Porção crocante · cheddar opcional"},
+  {name:"Hot Dog Clássico", desc:"Salsicha, molho e batata palha"},
+  {name:"Nuggets de Frango", desc:"10 unidades · molho à escolha"},
+];
+
+let chosen = null;
+let qty = 1;
+let pay = 'pix';
+
+const resultsEl = document.getElementById('results');
+const searchInput = document.getElementById('searchInput');
+
+function renderResults(filter=""){
+  const f = filter.trim().toLowerCase();
+  const list = products.filter(p => p.name.toLowerCase().includes(f));
+  resultsEl.innerHTML = "";
+  if(list.length === 0){
+    resultsEl.innerHTML = '<div class="empty-hint">Nenhum item encontrado</div>';
+    return;
+  }
+  list.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.innerHTML = `<div><div class="item-name">${p.name}</div><div class="item-desc">${p.desc}</div></div><div class="item-arrow">›</div>`;
+    div.onclick = () => selectProduct(p);
+    resultsEl.appendChild(div);
+  });
+}
+renderResults();
+searchInput.addEventListener('input', e => renderResults(e.target.value));
+
+function showView(id){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function selectProduct(p){
+  chosen = p;
+  qty = 1;
+  document.getElementById('chosenName').textContent = p.name;
+  document.getElementById('chosenDesc').textContent = p.desc;
+  document.getElementById('qtyVal').textContent = qty;
+  showView('view-configure');
+}
+
+function goToSearch(){
+  showView('view-search');
+}
+
+function changeQty(delta){
+  qty = Math.max(1, Math.min(9, qty + delta));
+  document.getElementById('qtyVal').textContent = qty;
+}
+
+function selectPay(method){
+  pay = method;
+  document.getElementById('pay-pix').classList.toggle('active', method === 'pix');
+  document.getElementById('pay-cartao').classList.toggle('active', method === 'cartao');
+}
+
+function startGenerating(){
+  showView('view-progress');
+  document.getElementById('statusDot').style.background = '#C98A4B';
+  const fill = document.getElementById('barFill');
+  const pct = document.getElementById('barPct');
+  const sub = document.getElementById('progressSub');
+  const steps = ["Preparando porção...", "Pesando alimento...", "Liberando na bandeja..."];
+  let p = 0;
+  fill.style.width = "0%";
+  pct.textContent = "0%";
+  const timer = setInterval(() => {
+    p += 4;
+    fill.style.width = Math.min(p,100) + "%";
+    pct.textContent = Math.min(p,100) + "%";
+    sub.textContent = steps[Math.min(steps.length-1, Math.floor(p/34))];
+    if(p >= 100){
+      clearInterval(timer);
+      setTimeout(finishOrder, 350);
+    }
+  }, 110);
+}
+
+function finishOrder(){
+  document.getElementById('paySummary').textContent = pay === 'pix' ? 'Pix' : 'Cartão';
+  document.getElementById('tray').classList.add('ready');
+  document.getElementById('traySpan').textContent = 'Comida pronta — retire aqui';
+  document.getElementById('statusDot').style.background = '#5B8C5A';
+  showView('view-done');
+}
+
+function resetAll(){
+  chosen = null; qty = 1; pay = 'pix';
+  selectPay('pix');
+  document.getElementById('tray').classList.remove('ready');
+  document.getElementById('traySpan').textContent = 'Aqui retira a comida';
+  document.getElementById('statusDot').style.background = '#5B8C5A';
+  searchInput.value = "";
+  renderResults();
+  showView('view-search');
+}
+</script>
+
+</body>
+</html>
